@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RHDC Master Operational Database — Admin Dashboard</title>
+<style>
+  :root {
+    --bg:       #0f172a;
+    --surface:  #1e293b;
+    --border:   #334155;
+    --text:     #f1f5f9;
+    --muted:    #94a3b8;
+    --blue:     #3b82f6;
+    --green:    #10b981;
+    --yellow:   #f59e0b;
+    --pink:     #ec4899;
+    --purple:   #a78bfa;
+    --cyan:     #06b6d4;
+    --red:      #ef4444;
+    --lime:     #84cc16;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left h1 { font-size: 20px; font-weight: 700; color: var(--text); }
+  .header-left p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .badge {
+    background: #16213e;
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .live-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
+
+  /* ── NAV TABS ── */
+  .nav {
+    display: flex;
+    gap: 4px;
+    padding: 12px 32px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    overflow-x: auto;
+  }
+  .nav button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .nav button:hover     { color: var(--text); }
+  .nav button.active    { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* ── MAIN CONTENT ── */
+  .main { padding: 28px 32px; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent, var(--blue));
+  }
+  .kpi .icon { font-size: 26px; margin-bottom: 10px; }
+  .kpi .value {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--accent, var(--blue));
+    line-height: 1;
+  }
+  .kpi .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi .sub   { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  /* ── SECTION HEADERS ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-header h2 { font-size: 16px; font-weight: 600; }
+  .section-header .hint { font-size: 12px; color: var(--muted); }
+
+  /* ── TABLES ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-header h3 { font-size: 14px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left;
+    padding: 10px 16px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,.15);
+  }
+  td { padding: 11px 16px; border-bottom: 1px solid rgba(51,65,85,.4); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.025); }
+
+  /* ── STATUS BADGES ── */
+  .badge-status {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .s-accepted     { background: rgba(16,185,129,.15); color: #34d399; }
+  .s-pending      { background: rgba(245,158,11,.15);  color: #fbbf24; }
+  .s-under_review { background: rgba(59,130,246,.15);  color: #60a5fa; }
+  .s-rejected     { background: rgba(239,68,68,.15);   color: #f87171; }
+  .s-flagged      { background: rgba(167,139,250,.15); color: #c4b5fd; }
+  .s-active       { background: rgba(16,185,129,.15);  color: #34d399; }
+  .s-completed    { background: rgba(100,116,139,.15); color: #94a3b8; }
+  .s-upcoming     { background: rgba(245,158,11,.15);  color: #fbbf24; }
+
+  /* ── PROGRESS BARS ── */
+  .progress-wrap { background: var(--border); border-radius: 4px; height: 6px; width: 100px; }
+  .progress-bar  { height: 6px; border-radius: 4px; }
+
+  /* ── GRID 2-COL ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* ── SEARCH ── */
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .search-bar input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .search-bar input:focus { border-color: var(--blue); }
+  .search-bar input::placeholder { color: var(--muted); }
+  .btn {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-sm { padding: 4px 12px; font-size: 11px; border-radius: 6px; }
+
+  /* ── SCHEMA VIEWER ── */
+  .schema-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .schema-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .schema-card .sc-header {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .schema-card .sc-body { font-size: 12px; }
+  .schema-card .sc-row {
+    padding: 6px 14px;
+    border-top: 1px solid rgba(51,65,85,.4);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .sc-pk   { color: #fbbf24; font-weight: 700; }
+  .sc-fk   { color: #6ee7b7; }
+  .sc-type { color: var(--muted); font-size: 11px; }
+
+  /* ── QUERY BOX ── */
+  .query-box {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    font-family: 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 12px;
+    color: #c9d1d9;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
+  .query-box .kw  { color: #ff7b72; }
+  .query-box .fn  { color: #d2a8ff; }
+  .query-box .str { color: #a5d6ff; }
+  .query-box .cm  { color: #8b949e; }
+
+  /* ── CHART BARS (CSS only) ── */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 12px; }
+  .bar-label { width: 140px; font-size: 12px; color: var(--muted); text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--border); border-radius: 4px; height: 18px; position: relative; }
+  .bar-fill  { height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 700; color: #fff; transition: width 1s ease; }
+  .bar-count { width: 36px; font-size: 12px; font-weight: 600; text-align: right; }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>🗄️ RHDC Master Operational Database</h1>
+    <p>Remote Hustle Database Challenge — Stage 1 Admin Dashboard</p>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center">
+    <span class="badge"><span class="live-dot"></span>PostgreSQL 15</span>
+    <span class="badge" style="border-color:var(--green);color:var(--green)">10 Tables Active</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="active" onclick="showTab('overview')">📊 Overview</button>
+  <button onclick="showTab('participants')">🎓 Participants</button>
+  <button onclick="showTab('submissions')">📋 Submissions</button>
+  <button onclick="showTab('evaluations')">🏆 Evaluations</button>
+  <button onclick="showTab('stages')">🏁 Stages</button>
+  <button onclick="showTab('schema')">🗂️ Schema</button>
+  <button onclick="showTab('queries')">⚡ Queries</button>
+  <button onclick="showTab('audit')">📝 Audit Log</button>
+</div>
+
+<div class="main">
+
+  <!-- ═══════════════════════════════ OVERVIEW ═══════════════════════════════ -->
+  <div class="tab-pane active" id="tab-overview">
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi" style="--accent:var(--blue)">
+        <div class="icon">👤</div>
+        <div class="value">107</div>
+        <div class="label">Total Users</div>
+        <div class="sub">100 participants · 5 judges · 2 staff</div>
+      </div>
+      <div class="kpi" style="--accent:var(--green)">
+        <div class="icon">🎓</div>
+        <div class="value">100</div>
+        <div class="label">Participants</div>
+        <div class="sub">Across 4 cohorts · 10 tracks</div>
+      </div>
+      <div class="kpi" style="--accent:var(--pink)">
+        <div class="icon">📋</div>
+        <div class="value">60+</div>
+        <div class="label">Submissions</div>
+        <div class="sub">Stages 1 & 2 combined</div>
+      </div>
+      <div class="kpi" style="--accent:var(--yellow)">
+        <div class="icon">🏆</div>
+        <div class="value">25+</div>
+        <div class="label">Evaluations</div>
+        <div class="sub">By 5 judges · avg 91.2 pts</div>
+      </div>
+      <div class="kpi" style="--accent:var(--purple)">
+        <div class="icon">⚖️</div>
+        <div class="value">5</div>
+        <div class="label">Judges</div>
+        <div class="sub">Fully onboarded & active</div>
+      </div>
+      <div class="kpi" style="--accent:var(--cyan)">
+        <div class="icon">🏁</div>
+        <div class="value">4</div>
+        <div class="label">Stages</div>
+        <div class="sub">2 completed · 1 active · 1 upcoming</div>
+      </div>
+      <div class="kpi" style="--accent:var(--red)">
+        <div class="icon">📝</div>
+        <div class="value">Auto</div>
+        <div class="label">Audit Logs</div>
+        <div class="sub">Every change tracked via triggers</div>
+      </div>
+      <div class="kpi" style="--accent:var(--lime)">
+        <div class="icon">🔒</div>
+        <div class="value">RLS</div>
+        <div class="label">Row-Level Security</div>
+        <div class="sub">4 roles · 4 policies enforced</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <!-- Stage Status -->
+      <div class="card">
+        <div class="card-header">
+          <h3>🏁 Stage Status Overview</h3>
+          <span class="badge-status s-active">Live</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Stage</th><th>Theme</th><th>Status</th><th>Dates</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Stage 1</strong></td>
+              <td style="color:var(--muted);font-size:12px">Data Modeling · Integrity</td>
+              <td><span class="badge-status s-completed">Completed</span></td>
+              <td style="font-size:12px;color:var(--muted)">10–17 Jan 2025</td>
+            </tr>
+            <tr>
+              <td><strong>Stage 2</strong></td>
+              <td style="color:var(--muted);font-size:12px">Architecture · API Design</td>
+              <td><span class="badge-status s-completed">Completed</span></td>
+              <td style="font-size:12px;color:var(--muted)">24–31 Jan 2025</td>
+            </tr>
+            <tr>
+              <td><strong>Stage 3</strong></td>
+              <td style="color:var(--muted);font-size:12px">Analytics · Visualization</td>
+              <td><span class="badge-status s-active">Active</span></td>
+              <td style="font-size:12px;color:var(--muted)">7–14 Feb 2025</td>
+            </tr>
+            <tr>
+              <td><strong>Stage 4</strong></td>
+              <td style="color:var(--muted);font-size:12px">Security · Optimization</td>
+              <td><span class="badge-status s-upcoming">Upcoming</span></td>
+              <td style="font-size:12px;color:var(--muted)">21–28 Feb 2025</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Track Distribution -->
+      <div class="card">
+        <div class="card-header"><h3>📊 Participants by Track</h3></div>
+        <div style="padding:18px">
+          <div class="bar-chart" id="trackChart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submission Status Breakdown -->
+    <div class="card">
+      <div class="card-header"><h3>📋 Submission Status Breakdown — All Stages</h3></div>
+      <div style="padding: 20px; display:flex; gap:32px; flex-wrap:wrap; align-items:center">
+        <div style="text-align:center">
+          <div style="font-size:36px;font-weight:800;color:var(--green)">38</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Accepted</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:36px;font-weight:800;color:var(--blue)">10</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Under Review</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:36px;font-weight:800;color:var(--yellow)">8</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Pending</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:36px;font-weight:800;color:var(--red)">4</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Rejected</div>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div style="margin-bottom:8px;display:flex;justify-content:space-between;font-size:12px">
+            <span style="color:var(--green)">Accepted</span><span>63%</span>
+          </div>
+          <div class="progress-wrap" style="width:100%;margin-bottom:10px">
+            <div class="progress-bar" style="width:63%;background:var(--green)"></div>
+          </div>
+          <div style="margin-bottom:8px;display:flex;justify-content:space-between;font-size:12px">
+            <span style="color:var(--blue)">Under Review</span><span>17%</span>
+          </div>
+          <div class="progress-wrap" style="width:100%;margin-bottom:10px">
+            <div class="progress-bar" style="width:17%;background:var(--blue)"></div>
+          </div>
+          <div style="margin-bottom:8px;display:flex;justify-content:space-between;font-size:12px">
+            <span style="color:var(--yellow)">Pending</span><span>13%</span>
+          </div>
+          <div class="progress-wrap" style="width:100%;margin-bottom:10px">
+            <div class="progress-bar" style="width:13%;background:var(--yellow)"></div>
+          </div>
+          <div style="margin-bottom:8px;display:flex;justify-content:space-between;font-size:12px">
+            <span style="color:var(--red)">Rejected</span><span>7%</span>
+          </div>
+          <div class="progress-wrap" style="width:100%">
+            <div class="progress-bar" style="width:7%;background:var(--red)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /overview -->
+
+
+  <!-- ═══════════════════════════════ PARTICIPANTS ═══════════════════════════════ -->
+  <div class="tab-pane" id="tab-participants">
+    <div class="section-header">
+      <h2>🎓 Participant Registry</h2>
+      <span class="hint">Source: vw_participant_profiles</span>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="participantSearch" placeholder="Filter by name, track, cohort, country…" oninput="filterTable('participantTable', this.value)"/>
+      <button class="btn">🔍 Search</button>
+    </div>
+    <div class="card">
+      <table id="participantTable">
+        <thead>
+          <tr><th>Reg No</th><th>Name</th><th>Track</th><th>Cohort</th><th>Country</th><th>Status</th><th>Registered</th></tr>
+        </thead>
+        <tbody id="participantBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════ SUBMISSIONS ═══════════════════════════════ -->
+  <div class="tab-pane" id="tab-submissions">
+    <div class="section-header">
+      <h2>📋 Submission Tracker</h2>
+      <span class="hint">Source: vw_submission_tracker</span>
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>Participant</th><th>Stage</th><th>Title</th><th>Status</th><th>Submitted</th></tr>
+        </thead>
+        <tbody id="submissionsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════ EVALUATIONS ═══════════════════════════════ -->
+  <div class="tab-pane" id="tab-evaluations">
+    <div class="section-header">
+      <h2>🏆 Evaluations & Scores</h2>
+      <span class="hint">Source: vw_judge_scoreboard</span>
+    </div>
+    <div class="card">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Participant</th><th>Stage</th><th>Avg Score</th><th>Technical</th><th>Creativity</th><th>Usability</th><th>Presentation</th><th>Judges</th><th>Final</th></tr>
+        </thead>
+        <tbody id="evaluationsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════ STAGES ═══════════════════════════════ -->
+  <div class="tab-pane" id="tab-stages">
+    <div class="section-header">
+      <h2>🏁 Stage Analytics</h2>
+      <span class="hint">Source: vw_analytics_summary</span>
+    </div>
+    <div class="grid-2" style="margin-bottom:20px">
+      <div class="card">
+        <div class="card-header"><h3>Stage 1 — Completed</h3><span class="badge-status s-completed">Completed</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Total Submissions</span><strong>38</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Accepted</span><strong style="color:var(--green)">24</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Avg Score</span><strong style="color:var(--blue)">74.3</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Top Score</span><strong style="color:var(--yellow)">97.8</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Qualified</span><strong>67</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Advanced</span><strong style="color:var(--green)">45</strong></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Stage 3 — Active</h3><span class="badge-status s-active">Active</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Submissions Received</span><strong>22</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Pending Review</span><strong style="color:var(--yellow)">8</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Under Review</span><strong style="color:var(--blue)">10</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Accepted</span><strong style="color:var(--green)">4</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Deadline</span><strong>Feb 14, 2025</strong></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">Evaluations Done</span><strong>14</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Top 10 Participants — Stage 1 Leaderboard</h3></div>
+      <table>
+        <thead>
+          <tr><th>Rank</th><th>Reg No</th><th>Name</th><th>Track</th><th>Country</th><th>Avg Score</th><th>Advanced</th></tr>
+        </thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════ SCHEMA ═══════════════════════════════ -->
+  <div class="tab-pane" id="tab-schema">
+    <div class="section-header">
+      <h2>🗂️ Database Schema</h2>
+      <span class="hint">10 tables · 5 ENUMs · 12 indexes · 6 triggers · 4 roles</span>
+    </div>
+    <div class="schema-grid" id="schemaGrid"></div>
+  </div>
+
+
+  <!-- ═══════════════════════════════ QUERIES ═══════════════════════════════ -->
+  <div class="tab-pane" id="tab-queries">
+    <div class="section-header">
+      <h2>⚡ Key Operational Queries</h2>
+      <span class="hint">Copy and run in your SQL client</span>
+    </div>
+    <div id="queriesContainer"></div>
+  </div>
+
+
+  <!-- ═══════════════════════════════ AUDIT ═══════════════════════════════ -->
+  <div class="tab-pane" id="tab-audit">
+    <div class="section-header">
+      <h2>📝 Audit Trail</h2>
+      <span class="hint">Source: vw_audit_trail — auto-populated by triggers</span>
+    </div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      <div class="kpi" style="--accent:var(--green)">
+        <div class="value">Auto</div>
+        <div class="label">Logging Mode</div>
+        <div class="sub">Zero manual effort needed</div>
+      </div>
+      <div class="kpi" style="--accent:var(--blue)">
+        <div class="value">6</div>
+        <div class="label">Active Triggers</div>
+        <div class="sub">On submissions & evaluations</div>
+      </div>
+      <div class="kpi" style="--accent:var(--yellow)">
+        <div class="value">JSONB</div>
+        <div class="label">Change Format</div>
+        <div class="sub">Full before/after state stored</div>
+      </div>
+      <div class="kpi" style="--accent:var(--red)">
+        <div class="value">INET</div>
+        <div class="label">IP Tracking</div>
+        <div class="sub">Source address captured</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Recent Audit Events (auto-generated on load)</h3></div>
+      <table>
+        <thead>
+          <tr><th>Log ID</th><th>Actor</th><th>Role</th><th>Action</th><th>Table</th><th>Timestamp</th></tr>
+        </thead>
+        <tbody id="auditBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="footer">
+  RHDC Master Operational Database · Stage 1 · PostgreSQL 15 · Built for Remote Hustle Database Challenge<br>
+  <span style="color:var(--border)">Integrity &gt; Everything · Quality &gt; Size</span>
+</div>
+
+
+<script>
+// ═══════════════════ DATA ═══════════════════
+const tracks = [
+  'Data Analytics','Software Development','Cybersecurity','Product Management',
+  'UI/UX Design','Digital Marketing','Cloud Computing','Machine Learning','DevOps','Blockchain'
+];
+const countries = ['Nigeria','Ghana','Kenya','Rwanda','Senegal','Tanzania','Uganda','Cameroon','Ethiopia','Côte d\'Ivoire'];
+const firstNames = ['Amara','Chidi','Emeka','Fatima','Grace','Hassan','Ifeoma','Jude','Kemi','Lekan',
+  'Musa','Ngozi','Obinna','Peace','Rashid','Sola','Tunde','Uche','Vivian','Wale',
+  'Ada','Bello','Chinwe','Damilola','Eze','Funke','Gbenga','Halima','Ife','John',
+  'Kola','Lola','Mike','Nkem','Ola','Priya','Queen','Remi','Seun','Tobi'];
+const lastNames = ['Okafor','Bello','Adeyemi','Musa','Ibrahim','Nwosu','Osei','Diallo','Kamara','Mensah',
+  'Owusu','Traore','Coulibaly','Keita','Toure','Diop','Fall','Ndiaye','Sow','Ba'];
+const cohorts = ['Cohort-A 2024','Cohort-B 2024','Cohort-C 2024','Cohort-A 2025'];
+const pStatuses = ['active','active','active','active','disqualified','withdrawn','completed'];
+
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randNum(min, max) { return (Math.random() * (max - min) + min).toFixed(2); }
+
+// Generate 100 fake participants
+const participants = Array.from({length:100}, (_,i) => ({
+  reg: `RH-2025-${String(i+1).padStart(4,'0')}`,
+  name: `${rand(firstNames)} ${rand(lastNames)}`,
+  track: tracks[i % tracks.length],
+  cohort: rand(cohorts),
+  country: rand(countries),
+  status: rand(pStatuses),
+  registered: `2025-01-${String(Math.floor(Math.random()*17)+1).padStart(2,'0')}`
+}));
+
+const subTitles = [
+  'Master Operational DB','Data Pipeline Engine','Analytics Dashboard',
+  'Secure User Platform','Real-time Tracker','Automated Scoring System',
+  'Stage Progress Monitor','Judge Portal Backend','Audit Trail System','Report Generator'
+];
+const subStatuses = ['accepted','accepted','accepted','under_review','pending','rejected'];
+
+// 60 submissions
+const submissions = Array.from({length:60}, (_,i) => ({
+  participant: participants[i % participants.length].name,
+  reg: participants[i % participants.length].reg,
+  stage: i < 38 ? 'Stage 1' : 'Stage 2',
+  title: `${rand(subTitles)} — Stage ${i<38?1:2}`,
+  status: rand(subStatuses),
+  submitted: `2025-01-${String(Math.floor(Math.random()*7)+10).padStart(2,'0')} ${String(Math.floor(Math.random()*24)).padStart(2,'0')}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}`
+}));
+
+// 25 evaluations
+const evals = Array.from({length:25}, (_,i) => {
+  const t = parseFloat(randNum(60,98)), c = parseFloat(randNum(60,98)),
+        u = parseFloat(randNum(60,98)), p = parseFloat(randNum(60,98));
+  const avg = ((t+c+u+p)/4).toFixed(2);
+  return {
+    rank: i+1,
+    participant: participants[i].name,
+    stage: i < 20 ? 'Stage 1' : 'Stage 2',
+    avg, t: t.toFixed(2), c: c.toFixed(2), u: u.toFixed(2), p: p.toFixed(2),
+    judges: Math.floor(Math.random()*3)+1,
+    final: Math.random()>.4
+  };
+}).sort((a,b) => b.avg - a.avg);
+
+// Leaderboard top 10
+const leaderboard = participants.slice(0,10).map((p,i) => ({
+  rank: i+1,
+  reg: p.reg,
+  name: p.name,
+  track: p.track,
+  country: p.country,
+  score: randNum(75,98),
+  advanced: Math.random() > 0.3
+})).sort((a,b) => b.score - a.score);
+
+// Schema
+const schemaData = [
+  { name:'users', color:'#2563eb', icon:'👤', fields:[
+    {n:'user_id',t:'UUID PRIMARY KEY',pk:true},{n:'full_name',t:'VARCHAR(150)'},{n:'email',t:'VARCHAR(255) UNIQUE'},
+    {n:'password_hash',t:'TEXT'},{n:'role',t:'ENUM user_role'},{n:'phone',t:'VARCHAR(30)'},{n:'country',t:'VARCHAR(100)'},{n:'is_active',t:'BOOLEAN'},{n:'created_at',t:'TIMESTAMPTZ'}
+  ]},
+  { name:'participants', color:'#059669', icon:'🎓', fields:[
+    {n:'participant_id',t:'UUID PRIMARY KEY',pk:true},{n:'user_id',t:'UUID FK→users',fk:true},{n:'registration_no',t:'VARCHAR(30) UNIQUE'},
+    {n:'cohort',t:'VARCHAR(50)'},{n:'track',t:'VARCHAR(100)'},{n:'bio',t:'TEXT'},{n:'github_url',t:'VARCHAR(255)'},{n:'linkedin_url',t:'VARCHAR(255)'},{n:'status',t:'ENUM participant_status'},{n:'registered_at',t:'TIMESTAMPTZ'}
+  ]},
+  { name:'stages', color:'#d97706', icon:'🏁', fields:[
+    {n:'stage_id',t:'SERIAL PRIMARY KEY',pk:true},{n:'stage_name',t:'VARCHAR(150)'},{n:'stage_number',t:'INTEGER UNIQUE'},
+    {n:'theme',t:'VARCHAR(255)'},{n:'start_date',t:'DATE'},{n:'end_date',t:'DATE'},{n:'status',t:'ENUM stage_status'},{n:'max_score',t:'NUMERIC(6,2)'}
+  ]},
+  { name:'judges', color:'#7c3aed', icon:'⚖️', fields:[
+    {n:'judge_id',t:'UUID PRIMARY KEY',pk:true},{n:'user_id',t:'UUID FK→users',fk:true},{n:'expertise',t:'VARCHAR(255)'},
+    {n:'organization',t:'VARCHAR(200)'},{n:'assigned_stages',t:'INTEGER[]'},{n:'is_active',t:'BOOLEAN'}
+  ]},
+  { name:'submissions', color:'#be185d', icon:'📋', fields:[
+    {n:'submission_id',t:'UUID PRIMARY KEY',pk:true},{n:'participant_id',t:'UUID FK→participants',fk:true},{n:'stage_id',t:'INTEGER FK→stages',fk:true},
+    {n:'title',t:'VARCHAR(255)'},{n:'submission_url',t:'VARCHAR(500)'},{n:'github_repo',t:'VARCHAR(500)'},{n:'status',t:'ENUM submission_status'},{n:'submitted_at',t:'TIMESTAMPTZ'}
+  ]},
+  { name:'evaluations', color:'#be185d', icon:'🏆', fields:[
+    {n:'evaluation_id',t:'UUID PRIMARY KEY',pk:true},{n:'submission_id',t:'UUID FK→submissions',fk:true},{n:'judge_id',t:'UUID FK→judges',fk:true},
+    {n:'score',t:'NUMERIC(6,2) [0-100]'},{n:'technical_score',t:'NUMERIC(6,2)'},{n:'creativity_score',t:'NUMERIC(6,2)'},{n:'usability_score',t:'NUMERIC(6,2)'},{n:'presentation_score',t:'NUMERIC(6,2)'},{n:'feedback',t:'TEXT'},{n:'is_final',t:'BOOLEAN'}
+  ]},
+  { name:'stage_progress', color:'#d97706', icon:'📈', fields:[
+    {n:'progress_id',t:'UUID PRIMARY KEY',pk:true},{n:'participant_id',t:'UUID FK→participants',fk:true},{n:'stage_id',t:'INTEGER FK→stages',fk:true},
+    {n:'qualified',t:'BOOLEAN'},{n:'average_score',t:'NUMERIC(6,2)'},{n:'rank_in_stage',t:'INTEGER'},{n:'advanced_to_next',t:'BOOLEAN'}
+  ]},
+  { name:'reports', color:'#0891b2', icon:'📊', fields:[
+    {n:'report_id',t:'UUID PRIMARY KEY',pk:true},{n:'generated_by',t:'UUID FK→users',fk:true},{n:'stage_id',t:'INTEGER FK→stages',fk:true},
+    {n:'report_name',t:'VARCHAR(255)'},{n:'report_type',t:'VARCHAR(100)'},{n:'report_data',t:'JSONB'},{n:'generated_at',t:'TIMESTAMPTZ'}
+  ]},
+  { name:'audit_logs', color:'#dc2626', icon:'📝', fields:[
+    {n:'log_id',t:'BIGSERIAL PRIMARY KEY',pk:true},{n:'user_id',t:'UUID FK→users (nullable)',fk:true},
+    {n:'action',t:'ENUM audit_action'},{n:'table_name',t:'VARCHAR(100)'},{n:'record_id',t:'TEXT'},{n:'old_values',t:'JSONB'},{n:'new_values',t:'JSONB'},{n:'ip_address',t:'INET'},{n:'performed_at',t:'TIMESTAMPTZ'}
+  ]},
+  { name:'notifications', color:'#65a30d', icon:'🔔', fields:[
+    {n:'notification_id',t:'UUID PRIMARY KEY',pk:true},{n:'user_id',t:'UUID FK→users',fk:true},
+    {n:'title',t:'VARCHAR(255)'},{n:'message',t:'TEXT'},{n:'notification_type',t:'VARCHAR(50)'},{n:'is_read',t:'BOOLEAN'},{n:'created_at',t:'TIMESTAMPTZ'}
+  ]},
+];
+
+// Queries
+const queries = [
+  { title:'Participant Registration Lookup', view:'vw_participant_profiles',
+    sql:`<span class="kw">SELECT</span> registration_no, full_name, email, track, cohort, participant_status\n<span class="kw">FROM</span>   <span class="fn">vw_participant_profiles</span>\n<span class="kw">WHERE</span>  track = <span class="str">'Data Analytics'</span>\n<span class="kw">ORDER BY</span> registered_at;` },
+  { title:'Real-Time Submission Tracker', view:'vw_submission_tracker',
+    sql:`<span class="kw">SELECT</span> registration_no, participant_name, stage_name, submission_status, submitted_at\n<span class="kw">FROM</span>   <span class="fn">vw_submission_tracker</span>\n<span class="kw">WHERE</span>  stage_number = <span class="str">1</span>\n<span class="kw">ORDER BY</span> submitted_at <span class="kw">DESC</span>;` },
+  { title:'Judge Scoreboard', view:'vw_judge_scoreboard',
+    sql:`<span class="kw">SELECT</span> participant_name, avg_total_score, avg_technical, avg_creativity,\n       avg_usability, avg_presentation, num_evaluations\n<span class="kw">FROM</span>   <span class="fn">vw_judge_scoreboard</span>\n<span class="kw">ORDER BY</span> avg_total_score <span class="kw">DESC</span>;` },
+  { title:'Stage Leaderboard — Top 10', view:'vw_stage_leaderboard',
+    sql:`<span class="kw">SELECT</span> rank_in_stage, registration_no, participant_name, average_score, advanced_to_next\n<span class="kw">FROM</span>   <span class="fn">vw_stage_leaderboard</span>\n<span class="kw">WHERE</span>  stage_name = <span class="str">'Stage 1'</span> <span class="kw">AND</span> qualified = <span class="kw">TRUE</span>\n<span class="kw">ORDER BY</span> rank_in_stage <span class="kw">LIMIT</span> <span class="str">10</span>;` },
+  { title:'Analytics Summary (KPIs)', view:'vw_analytics_summary',
+    sql:`<span class="kw">SELECT</span> stage_name, total_submissions, accepted_submissions,\n       overall_avg_score, qualified_participants, advanced_participants\n<span class="kw">FROM</span>   <span class="fn">vw_analytics_summary</span>\n<span class="kw">ORDER BY</span> stage_id;` },
+  { title:'Pending Actions Queue', view:'vw_pending_actions',
+    sql:`<span class="kw">SELECT</span> action_required, <span class="fn">COUNT</span>(*) <span class="kw">AS</span> total, <span class="fn">MIN</span>(submitted_at) <span class="kw">AS</span> oldest\n<span class="kw">FROM</span>   <span class="fn">vw_pending_actions</span>\n<span class="kw">GROUP BY</span> action_required\n<span class="kw">ORDER BY</span> total <span class="kw">DESC</span>;` },
+  { title:'Register Participant (Stored Procedure)', view:'register_participant()',
+    sql:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="fn">register_participant</span>(\n    <span class="str">'Ada Okafor'</span>,\n    <span class="str">'ada.okafor@example.com'</span>,\n    <span class="str">'$2b$12$hashed...'</span>,\n    <span class="str">'+2348123456789'</span>,\n    <span class="str">'Nigeria'</span>,\n    <span class="str">'Cohort-A 2025'</span>,\n    <span class="str">'Data Analytics'</span>\n);` },
+  { title:'Record Evaluation (Stored Procedure)', view:'record_evaluation()',
+    sql:`<span class="kw">SELECT</span> <span class="fn">record_evaluation</span>(\n    <span class="str">'submission-uuid'</span>,\n    <span class="str">'judge-uuid'</span>,\n    <span class="str">92.0</span>,  <span class="cm">-- technical</span>\n    <span class="str">88.5</span>,  <span class="cm">-- creativity</span>\n    <span class="str">91.0</span>,  <span class="cm">-- usability</span>\n    <span class="str">95.0</span>,  <span class="cm">-- presentation</span>\n    <span class="str">'Excellent schema design...'</span>,\n    <span class="kw">TRUE</span>   <span class="cm">-- is_final</span>\n);` },
+];
+
+const actions = ['INSERT','UPDATE','DELETE','INSERT','UPDATE','INSERT'];
+const tables  = ['submissions','evaluations','submissions','participants','submissions','evaluations'];
+const actors  = ['judge1@remotehustle.io','admin@remotehustle.io','System / Trigger','judge2@remotehustle.io','admin@remotehustle.io','System / Trigger'];
+const roles   = ['judge','admin','trigger','judge','admin','trigger'];
+
+// ═══════════════════ RENDER ═══════════════════
+function statusBadge(s) {
+  return `<span class="badge-status s-${s}">${s.replace('_',' ')}</span>`;
+}
+
+function scoreBar(score) {
+  const pct = Math.round(score);
+  const col = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--yellow)' : 'var(--red)';
+  return `<div style="display:flex;align-items:center;gap:8px">
+    <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${col}"></div></div>
+    <span style="font-size:12px;font-weight:700;color:${col}">${score}</span>
+  </div>`;
+}
+
+// Participants table
+function renderParticipants(data) {
+  document.getElementById('participantBody').innerHTML = data.map(p => `
+    <tr>
+      <td style="font-family:monospace;color:var(--blue)">${p.reg}</td>
+      <td><strong>${p.name}</strong></td>
+      <td><span style="color:var(--cyan)">${p.track}</span></td>
+      <td style="color:var(--muted)">${p.cohort}</td>
+      <td>${p.country}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td style="color:var(--muted);font-size:12px">${p.registered}</td>
+    </tr>`).join('');
+}
+renderParticipants(participants.slice(0,50));
+
+// Submissions
+document.getElementById('submissionsBody').innerHTML = submissions.map(s => `
+  <tr>
+    <td><strong>${s.participant}</strong><br><span style="font-size:11px;color:var(--muted)">${s.reg}</span></td>
+    <td><span style="color:var(--yellow)">${s.stage}</span></td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.title}</td>
+    <td>${statusBadge(s.status)}</td>
+    <td style="color:var(--muted);font-size:12px">${s.submitted}</td>
+  </tr>`).join('');
+
+// Evaluations
+document.getElementById('evaluationsBody').innerHTML = evals.map((e,i) => `
+  <tr>
+    <td style="color:var(--muted)">${i+1}</td>
+    <td><strong>${e.participant}</strong></td>
+    <td><span style="color:var(--yellow)">${e.stage}</span></td>
+    <td>${scoreBar(e.avg)}</td>
+    <td style="font-size:12px">${e.t}</td>
+    <td style="font-size:12px">${e.c}</td>
+    <td style="font-size:12px">${e.u}</td>
+    <td style="font-size:12px">${e.p}</td>
+    <td style="text-align:center">${e.judges}</td>
+    <td>${e.final ? '✅' : '<span style="color:var(--muted)">—</span>'}</td>
+  </tr>`).join('');
+
+// Leaderboard
+document.getElementById('leaderboardBody').innerHTML = leaderboard.map((p,i) => `
+  <tr>
+    <td><strong style="color:${i===0?'#fbbf24':i===1?'#94a3b8':i===2?'#cd7f32':'var(--text)'}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</strong></td>
+    <td style="font-family:monospace;color:var(--blue)">${p.reg}</td>
+    <td><strong>${p.name}</strong></td>
+    <td style="color:var(--cyan)">${p.track}</td>
+    <td>${p.country}</td>
+    <td>${scoreBar(p.score)}</td>
+    <td>${p.advanced ? '✅ Yes' : '<span style="color:var(--muted)">No</span>'}</td>
+  </tr>`).join('');
+
+// Schema
+document.getElementById('schemaGrid').innerHTML = schemaData.map(t => `
+  <div class="schema-card">
+    <div class="sc-header" style="background:${t.color}22;border-bottom:2px solid ${t.color}">
+      <span>${t.icon}</span>
+      <span style="color:${t.color}">${t.name}</span>
+    </div>
+    <div class="sc-body">
+      ${t.fields.map(f => `
+        <div class="sc-row">
+          <span class="${f.pk?'sc-pk':f.fk?'sc-fk':''}">${f.pk?'🔑 ':f.fk?'🔗 ':''}${f.n}</span>
+          <span class="sc-type">${f.t}</span>
+        </div>`).join('')}
+    </div>
+  </div>`).join('');
+
+// Queries
+document.getElementById('queriesContainer').innerHTML = queries.map(q => `
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header">
+      <h3>${q.title}</h3>
+      <span style="font-size:11px;color:var(--blue)">${q.view}</span>
+    </div>
+    <div class="query-box">${q.sql}</div>
+  </div>`).join('');
+
+// Audit
+const now = new Date();
+document.getElementById('auditBody').innerHTML = Array.from({length:20},(_,i) => {
+  const d = new Date(now - i * 37000);
+  const ts = d.toISOString().replace('T',' ').substring(0,19);
+  return `<tr>
+    <td style="color:var(--muted);font-family:monospace">${1000+i}</td>
+    <td>${actors[i%actors.length]}</td>
+    <td><span class="badge-status s-${roles[i%roles.length]==='trigger'?'completed':roles[i%roles.length]==='admin'?'active':'under_review'}">${roles[i%roles.length]}</span></td>
+    <td><span style="color:${actions[i%actions.length]==='INSERT'?'var(--green)':actions[i%actions.length]==='DELETE'?'var(--red)':'var(--yellow)'}">${actions[i%actions.length]}</span></td>
+    <td style="color:var(--cyan)">${tables[i%tables.length]}</td>
+    <td style="color:var(--muted);font-size:12px;font-family:monospace">${ts}</td>
+  </tr>`;
+}).join('');
+
+// Track chart
+const trackCounts = {};
+participants.forEach(p => { trackCounts[p.track] = (trackCounts[p.track]||0)+1; });
+const sorted = Object.entries(trackCounts).sort((a,b)=>b[1]-a[1]);
+const colors = ['var(--blue)','var(--green)','var(--yellow)','var(--pink)','var(--purple)',
+                'var(--cyan)','var(--red)','var(--lime)','var(--blue)','var(--green)'];
+document.getElementById('trackChart').innerHTML = sorted.map(([track,count],i) => `
+  <div class="bar-row">
+    <div class="bar-label">${track}</div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width:${count}%;background:${colors[i]}">
+        ${count > 5 ? count : ''}
+      </div>
+    </div>
+    <div class="bar-count" style="color:${colors[i]}">${count}</div>
+  </div>`).join('');
+
+// ═══════════════════ TABS ═══════════════════
+function showTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ═══════════════════ SEARCH ═══════════════════
+function filterTable(tableId, query) {
+  const q = query.toLowerCase();
+  if (tableId === 'participantTable') {
+    const filtered = participants.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.track.toLowerCase().includes(q) ||
+      p.cohort.toLowerCase().includes(q) ||
+      p.country.toLowerCase().includes(q) ||
+      p.reg.toLowerCase().includes(q)
+    );
+    renderParticipants(filtered.slice(0,50));
+  }
+}
+</script>
+</body>
+</html>
