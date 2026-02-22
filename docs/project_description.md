@@ -49,7 +49,7 @@ This database solves all of the above immediately.
 
 ## How Remote Hustle Can Use It Today
 
-1. **Deploy** the three SQL files to Supabase (free tier) in under 5 minutes
+1. **Deploy** the scripts in the `sql/` folder to Supabase (free tier) in under 5 minutes
 2. **Admins** open the SQL editor and run `SELECT * FROM vw_analytics_summary` for an instant dashboard
 3. **Judges** connect and run `SELECT * FROM vw_pending_actions` to see what needs evaluation
 4. **Operations** call `register_participant(...)` to onboard new participants via API or directly

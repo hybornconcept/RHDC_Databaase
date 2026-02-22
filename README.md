@@ -51,7 +51,7 @@ This repository contains the complete Master Operational Database for the **Remo
 1. Open [Supabase Dashboard](https://supabase.com)
 2. Create a new project or use the shared credentials below
 3. Navigate to **SQL Editor**
-4. Run scripts in order: `01_schema.sql` → `02_seed_data.sql` → `03_queries_views.sql`
+4. Run scripts in order: `sql/01_schema.sql` → `sql/02_seed_data.sql` → `sql/03_queries_views.sql`
 
 **Connection String:**
 ```
@@ -213,16 +213,16 @@ SELECT generate_stage_report(1, (SELECT user_id FROM users WHERE role = 'admin' 
 
 ## 📸 Database Snapshots
 
-The screenshots below are taken from the live admin dashboard (`06_admin_dashboard.html`) and show real data loaded from the seed files.
+The screenshots below are taken from the live admin dashboard (`guide/06_admin_dashboard.html`) and show real data loaded from the seed files.
 
 ### Overview
-![RHDC Admin Dashboard — Overview](Overview.png)
+![RHDC Admin Dashboard — Overview](docs/Overview.png)
 
 ### Participants
-![RHDC Admin Dashboard — Participants](Participants.png)
+![RHDC Admin Dashboard — Participants](docs/Participants.png)
 
 ### Submissions
-![RHDC Admin Dashboard — Submissions](submissions.png)
+![RHDC Admin Dashboard — Submissions](docs/submissions.png)
 
 ---
 
@@ -233,12 +233,20 @@ rhdc/
 ├── sql/
 │   ├── 01_schema.sql         # DDL: All tables, types, constraints, triggers, RLS
 │   ├── 02_seed_data.sql      # 100 participants, 60 submissions, 25 evaluations, etc.
-│   └── 03_queries_views.sql  # 8+ views, 10+ queries, 4 stored procedures
+│   ├── 03_queries_views.sql  # 8+ views, 10+ queries, 4 stored procedures
+│   └── 04_demo_queries.sql   # Full end-to-end judge demo script
 ├── diagrams/
 │   └── erd.svg               # Entity Relationship Diagram
 ├── docs/
-│   └── project_description.md # 1-page project summary
-└── README.md                 # This file
+│   ├── project_description.md # 1-page project summary
+│   ├── Overview.png          # Dashboard Snapshot
+│   ├── Participants.png      # Dashboard Snapshot
+│   └── submissions.png       # Dashboard Snapshot
+├── guide/
+│   ├── 05_deployment_guide.md # This guide
+│   ├── 06_admin_dashboard.html # Interactive Dashboard
+│   └── 07_setup.sh           # Automation script
+└── README.md                 # Main Documentation
 ```
 
 ---
