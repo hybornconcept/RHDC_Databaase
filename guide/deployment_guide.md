@@ -28,7 +28,7 @@ Supabase is the preferred platform because it gives you:
 
 ### Step 3: Run the Schema (DDL)
 
-1. Open `sql/01_schema.sql` from this repository
+1. Open `sql/schema.sql` from this repository
 2. Copy the **entire file contents**
 3. Paste into the Supabase SQL Editor
 4. Click **Run** (or press `Ctrl+Enter`)
@@ -37,7 +37,7 @@ Supabase is the preferred platform because it gives you:
 ### Step 4: Load Seed Data
 
 1. Click **New query** to open a fresh editor tab
-2. Open `sql/02_seed_data.sql`, copy all contents
+2. Open `sql/seed_data.sql`, copy all contents
 3. Paste and click **Run**
 4. You should see: `Success. No rows returned`
 5. Verify: run `SELECT COUNT(*) FROM participants;` → should return `100`
@@ -45,7 +45,7 @@ Supabase is the preferred platform because it gives you:
 ### Step 5: Load Views, Queries & Stored Procedures
 
 1. Click **New query** again
-2. Open `sql/03_queries_views.sql`, copy all contents
+2. Open `sql/queries_views.sql`, copy all contents
 3. Paste and click **Run**
 4. Verify views exist:
    ```sql
@@ -55,7 +55,7 @@ Supabase is the preferred platform because it gives you:
 
 ### Step 6: Run the Demo Script
 
-1. Open `sql/04_demo_queries.sql`
+1. Open `sql/demo_queries.sql`
 2. Run each section one at a time in the SQL Editor
 3. All sections should return data — the database is fully operational
 
@@ -100,7 +100,7 @@ In Supabase:
 psql "postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
 
 # Once connected, run the demo:
-\i sql/04_demo_queries.sql
+\i sql/demo_queries.sql
 ```
 
 ---
@@ -137,7 +137,7 @@ SELECT COUNT(*) FROM information_schema.triggers WHERE trigger_schema = 'public'
 SELECT * FROM vw_analytics_summary;
 
 -- 7. Full demo
--- Run sql/04_demo_queries.sql section by section
+-- Run sql/demo_queries.sql section by section
 ```
 
 ---
@@ -162,10 +162,10 @@ Demo Video    : https://[link-to-video]
 
 Files in repo:
   sql/                   — PostgreSQL scripts
-    01_schema.sql
-    02_seed_data.sql
-    03_queries_views.sql
-    04_demo_queries.sql
+    schema.sql
+    seed_data.sql
+    queries_views.sql
+    demo_queries.sql
   diagrams/
     erd.svg
   docs/
@@ -174,9 +174,9 @@ Files in repo:
     Participants.png
     submissions.png
   guide/
-    05_deployment_guide.md
-    06_admin_dashboard.html
-    07_setup.sh
+    deployment_guide.md
+    admin_dashboard.html
+    setup.sh
   README.md
 ```
 

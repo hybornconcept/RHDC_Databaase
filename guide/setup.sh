@@ -4,11 +4,11 @@
 # Remote Hustle Database Challenge | Stage 1
 # =============================================================
 # Usage:
-#   chmod +x 07_setup.sh
-#   ./07_setup.sh
+#   chmod +x setup.sh
+#   ./setup.sh
 #
 # Or with custom credentials:
-#   DB_NAME=mydb DB_USER=myuser ./07_setup.sh
+#   DB_NAME=mydb DB_USER=myuser ./setup.sh
 # =============================================================
 
 set -e  # exit on any error
@@ -105,9 +105,9 @@ fi
 PSQL_DB="psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME}"
 
 # ── 4. Run schema (DDL) ───────────────────────────────────────
-print_step "Loading schema (01_schema.sql)..."
+print_step "Loading schema (schema.sql)..."
 
-SCHEMA_FILE="${SCRIPT_DIR}/sql/01_schema.sql"
+SCHEMA_FILE="${SCRIPT_DIR}/sql/schema.sql"
 if [[ ! -f "${SCHEMA_FILE}" ]]; then
   print_error "File not found: ${SCHEMA_FILE}"
   exit 1
@@ -117,9 +117,9 @@ $PSQL_DB -f "${SCHEMA_FILE}" -v ON_ERROR_STOP=1 -q
 print_success "Schema created — 10 tables, 5 ENUMs, 6 triggers, 4 roles, RLS policies"
 
 # ── 5. Load seed data ─────────────────────────────────────────
-print_step "Loading seed data (02_seed_data.sql)..."
+print_step "Loading seed data (seed_data.sql)..."
 
-SEED_FILE="${SCRIPT_DIR}/sql/02_seed_data.sql"
+SEED_FILE="${SCRIPT_DIR}/sql/seed_data.sql"
 if [[ ! -f "${SEED_FILE}" ]]; then
   print_error "File not found: ${SEED_FILE}"
   exit 1
@@ -129,9 +129,9 @@ $PSQL_DB -f "${SEED_FILE}" -v ON_ERROR_STOP=1 -q
 print_success "Seed data loaded — 100 participants, 60+ submissions, 25+ evaluations"
 
 # ── 6. Load views, queries & procedures ──────────────────────
-print_step "Loading views & stored procedures (03_queries_views.sql)..."
+print_step "Loading views & stored procedures (queries_views.sql)..."
 
-QUERIES_FILE="${SCRIPT_DIR}/sql/03_queries_views.sql"
+QUERIES_FILE="${SCRIPT_DIR}/sql/queries_views.sql"
 if [[ ! -f "${QUERIES_FILE}" ]]; then
   print_error "File not found: ${QUERIES_FILE}"
   exit 1
@@ -227,10 +227,10 @@ echo -e "  ${YELLOW}psql postgresql://rh_judge_access:rhdc_judge_2025@${DB_HOST}
 echo -e "  ${YELLOW}SELECT * FROM vw_analytics_summary;${NC}"
 echo ""
 echo -e "${BOLD}Run the full judge demo:${NC}"
-echo -e "  ${YELLOW}psql -U ${DB_USER} -d ${DB_NAME} -f sql/04_demo_queries.sql${NC}"
+echo -e "  ${YELLOW}psql -U ${DB_USER} -d ${DB_NAME} -f sql/demo_queries.sql${NC}"
 echo ""
 echo -e "${BOLD}Open the admin dashboard:${NC}"
-echo -e "  ${YELLOW}open 06_admin_dashboard.html${NC}  ${BLUE}(or double-click in your file browser)${NC}"
+echo -e "  ${YELLOW}open admin_dashboard.html${NC}  ${BLUE}(or double-click in your file browser)${NC}"
 echo ""
 echo -e "${BLUE}Integrity > Everything  |  Quality > Size${NC}"
 echo ""

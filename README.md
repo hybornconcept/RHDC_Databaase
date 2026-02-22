@@ -51,7 +51,7 @@ This repository contains the complete Master Operational Database for the **Remo
 1. Open [Supabase Dashboard](https://supabase.com)
 2. Create a new project or use the shared credentials below
 3. Navigate to **SQL Editor**
-4. Run scripts in order: `sql/01_schema.sql` → `sql/02_seed_data.sql` → `sql/03_queries_views.sql`
+4. Run scripts in order: `sql/schema.sql` → `sql/seed_data.sql` → `sql/queries_views.sql`
 
 **Connection String:**
 ```
@@ -64,13 +64,13 @@ postgresql://postgres:[YOUR-PASSWORD]@db.pphwmzoeszrjffpdxucv.supabase.co:5432/p
 createdb rhdc_db
 
 # Run schema
-psql -d rhdc_db -f sql/01_schema.sql
+psql -d rhdc_db -f sql/schema.sql
 
 # Load seed data
-psql -d rhdc_db -f sql/02_seed_data.sql
+psql -d rhdc_db -f sql/seed_data.sql
 
 # Load views and queries
-psql -d rhdc_db -f sql/03_queries_views.sql
+psql -d rhdc_db -f sql/queries_views.sql
 ```
 
 ---
@@ -213,7 +213,7 @@ SELECT generate_stage_report(1, (SELECT user_id FROM users WHERE role = 'admin' 
 
 ## 📸 Database Snapshots
 
-The screenshots below are taken from the live admin dashboard (`guide/06_admin_dashboard.html`) and show real data loaded from the seed files.
+The screenshots below are taken from the live admin dashboard (`guide/admin_dashboard.html`) and show real data loaded from the seed files.
 
 ### Overview
 ![RHDC Admin Dashboard — Overview](docs/Overview.png)
@@ -231,10 +231,10 @@ The screenshots below are taken from the live admin dashboard (`guide/06_admin_d
 ```
 rhdc/
 ├── sql/
-│   ├── 01_schema.sql         # DDL: All tables, types, constraints, triggers, RLS
-│   ├── 02_seed_data.sql      # 100 participants, 60 submissions, 25 evaluations, etc.
-│   ├── 03_queries_views.sql  # 8+ views, 10+ queries, 4 stored procedures
-│   └── 04_demo_queries.sql   # Full end-to-end judge demo script
+│   ├── schema.sql            # DDL: All tables, types, constraints, triggers, RLS
+│   ├── seed_data.sql         # 100 participants, 60 submissions, 25 evaluations, etc.
+│   ├── queries_views.sql     # 8+ views, 10+ queries, 4 stored procedures
+│   └── demo_queries.sql      # Full end-to-end judge demo script
 ├── diagrams/
 │   └── erd.svg               # Entity Relationship Diagram
 ├── docs/
@@ -243,9 +243,9 @@ rhdc/
 │   ├── Participants.png      # Dashboard Snapshot
 │   └── submissions.png       # Dashboard Snapshot
 ├── guide/
-│   ├── 05_deployment_guide.md # This guide
-│   ├── 06_admin_dashboard.html # Interactive Dashboard
-│   └── 07_setup.sh           # Automation script
+│   ├── deployment_guide.md    # This guide
+│   ├── admin_dashboard.html    # Interactive Dashboard
+│   └── setup.sh               # Automation script
 └── README.md                 # Main Documentation
 ```
 
